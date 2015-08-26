@@ -6,6 +6,8 @@ SLACK_TOKEN = NotImplemented
 
 PORT = 9000
 
+DEBUG = False
+
 
 try:
     from .local_settings import *  # NOQA

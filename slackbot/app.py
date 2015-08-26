@@ -21,7 +21,7 @@ def main():
     io_loop = IOLoop.instance()
 
     # Web interface
-    application = Application(handlers)
+    application = Application(handlers, debug=settings.DEBUG)
     for host, rules in application.handlers:
         for i in rules:
             print i.regex.pattern
