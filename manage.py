@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import click
+from mybot import bot
 
 
 @click.group(context_settings={
@@ -23,9 +24,15 @@ def run():
 
 @cli.command()
 def show_channels():
-    from slackbot.core import get_channels
 
-    print ', '.join(i['name'] for i in get_channels().itervalues())
+    print ', '.join(i['name'] for i in bot.channels.itervalues())
+
+
+@cli.command()
+@click.argument('channel')
+@click.argument('text')
+def send_message(channel, text):
+    bot.send_message(text, channel_name=channel)
 
 if __name__ == '__main__':
     cli()
