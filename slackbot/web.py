@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from tornado.web import RequestHandler
-from .core import client
+from tornado.web import Application
 
 
-class MainHandler(RequestHandler):
-    def get(self):
-        print self.request.arguments
-        self.write("Hello, world")
+def make_application(handlers, options):
+    """Make a simple tornado application"""
 
-    def post(self):
-        self.write(self.request.arguments)
+    application = Application(handlers, **options)
+    for host, rules in application.handlers:
+        for i in rules:
+            print i.regex.pattern
 
-
-handlers = [
-    (r'/send_message', MainHandler),
-]
+    return application
