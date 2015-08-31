@@ -73,23 +73,32 @@ class SlackBot(object):
 
         if self.config.DEBUG:
             self.root_logger.setLevel(logging.DEBUG)
+            logging.debug('Enable DEBUG logging')
 
-    def route(self, url_regex):
+    def route(self, url_pattern):
         """Decorator to register a web handler"""
         def before_wrapper(func):
-            url_spec = (url_regex, func)
-            self._web_handlers.append(url_spec)
+            spec = (url_pattern, func)
+            self._web_handlers.append(spec)
 
         return decorator_factory(before_wrapper=before_wrapper)
 
-    def match_text(self, text_regex):
-        """Decorator to register a message handler when text matchs the regex"""
+    def on_event(self, event_type, match_key=None, match_pattern=None, break_loop=False):
         def before_wrapper(func):
-            text_spec = (text_regex, func)
-            self._message_handlers.append(text_spec)
+            options = dict(
+                match_key=match_key,
+                match_pattern=match_pattern,
+                break_loop=break_loop,
+            )
+            spec = (event_type, func, options)
+            self._message_handlers.append(spec)
 
         return decorator_factory(before_wrapper=before_wrapper)
 
+    def match_text(self, text_regex, break_loop=False):
+        """Decorator to register a message handler when text matchs the regex"""
+        #compiled = re.compile(text_regex)
+        pass
 
     def _get_channel_id(self, name):
         for c in self.channels.itervalues():
