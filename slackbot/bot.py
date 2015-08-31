@@ -4,6 +4,7 @@
 import json
 import inspect
 import logging
+import traceback
 from tornado import gen
 from tornado.websocket import websocket_connect
 from tornado.log import enable_pretty_logging
@@ -12,6 +13,8 @@ from .core import APIClient
 from .web import make_application
 from .server import run_server
 from .utils import ObjectDict, SearchList, decorator_factory
+from .message import Message, Reply
+from . import errors
 
 
 class SlackBot(object):
@@ -141,8 +144,64 @@ class SlackBot(object):
 
         logging.info('Start recv from ws connection')
         while True:
-            msg = yield conn.read_message()
-            logging.info('Get msg: %s', msg)
+            msg_str = yield conn.read_message()
+            try:
+                msg = Message(json.loads(msg_str), self)
+            except Exception as e:
+                logging.error('Parse message failed: %s; msg: %s', e, msg_str)
+                continue
+            else:
+                try:
+                    yield self.handle_message(msg)
+                except Exception as e:
+                    logging.error('Handle message failed, %s\n%s', e, traceback.format_exc())
+
+    @gen.coroutine
+    def handle_message(self, msg):
+        logging.info('Got msg: %s', msg)
+        #logging.debug('msg handlers %s', self._message_handlers)
+
+        # Ignore bot itself
+        if msg.user and msg.user == self.selfinfo['id']:
+            logging.debug('Got message from bot itself, ignore: %s', msg)
+            return
+
+        for event_type, handler_func, options in self._message_handlers:
+            msg_type = msg.type
+            #logging.debug('msg type %s %s', msg_type, event_type)
+            if msg_type == event_type:
+                logging.info('Event type %s, call handler %s', event_type, handler_func)
+                # TODO more options
+                #match_key=match_key,
+                #match_pattern=match_pattern,
+                #break_loop=break_loop,
+
+                output = handler_func(msg)
+                self.handle_output(output, msg)
+
+                if options.get('break_loop'):
+                    logging.info('Break message handling loop')
+                    break
+
+    def handle_output(self, output, msg):
+        # text:
+        # {u'text': u'a', u'ts': u'1440669389.000032', u'user': u'U03URT0PU', u'team': u'T02Q87WRQ', u'type': u'message', u'channel': u'C09J98JLV'}
+
+        # The canonical way to reply
+        if isinstance(output, Reply):
+            pass
+        # TODO the simple way
+        # elif isinstance(output, basestring)
+        else:
+            raise errors.ReplyFailed(
+                'Could not handle output: %s, %s' % (type(output), output))
+
+        # Ensure output is a Reply object
+        self.send_reply(output)
+
+    def send_reply(self, reply):
+        logging.info('Send reply: %s', reply)
+        return self.client.send_message(reply.channel_id, reply.text, **reply.extra_args)
 
     def run(self):
         """Run bot as a http server

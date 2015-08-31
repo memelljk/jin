@@ -36,11 +36,17 @@ class APIClient(object):
         logging.debug('Got channels: %s', ','.join(channel_names))
         return channels
 
-    def send_message(self, channel_id, text, as_user=True):
-        logging.info('call api chat.postMessage, %s, %s', channel_id, text)
-        kwargs = dict(channel=channel_id, text=text)
+    def send_message(self, channel_id, text, as_user=True, **kwargs):
+        """
+        Reference: https://api.slack.com/methods/chat.postMessage
+        """
+
+        api_args = dict(channel=channel_id, text=text)
         if as_user:
-            kwargs['as_user'] = 'true'
-        rv = self.api_call('chat.postMessage', **kwargs)
+            api_args['as_user'] = 'true'
+        api_args.update(kwargs)
+        logging.info('call api chat.postMessage: %s', api_args)
+
+        rv = self.api_call('chat.postMessage', **api_args)
         logging.debug('postMessage finished: %s', rv)
         return rv
