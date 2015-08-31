@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from tornado.web import Application
+from tornado.web import Application, RequestHandler
 
 
 def make_application(handlers, options):
@@ -13,3 +13,10 @@ def make_application(handlers, options):
             print i.regex.pattern
 
     return application
+
+
+class SlackHandler(RequestHandler):
+    pass
+
+
+# TODO common control APIs (update info etc)
