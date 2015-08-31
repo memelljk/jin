@@ -8,3 +8,7 @@ class SlackbotBaseError(Exception):
 
 class APICallFailed(SlackbotBaseError):
     """Failed to call Slack API"""
+
+
+class ReplyFailed(SlackbotBaseError):
+    """Failed to generate/send a reply"""
