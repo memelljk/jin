@@ -11,7 +11,7 @@ from tornado.log import enable_pretty_logging
 from .core import APIClient
 from .web import make_application
 from .server import run_server
-from .utils import ObjectDict, decorator_factory
+from .utils import ObjectDict, SearchList, decorator_factory
 
 
 class SlackBot(object):
@@ -34,11 +34,8 @@ class SlackBot(object):
         self._web_handlers = []
         self._message_handlers = []
 
-    @property
-    def channels(self):
-        if not hasattr(self, '_channels'):
-            self._channels = self.client.get_channels()
-        return self._channels
+        # For `prepare`
+        self.ws_url = None
 
     def apply_config_object(self, config_object):
         config = ObjectDict(self.default_config)
@@ -93,23 +90,6 @@ class SlackBot(object):
 
         return decorator_factory(before_wrapper=before_wrapper)
 
-    def get_ws_url(self):
-        # Get url
-        resp = self.client.server.api_requester.do(self.client.server.token, "rtm.start?simple_latest=1&no_unreads=1")
-        body = resp.read().decode('utf-8')
-        data = json.loads(body)
-        ws_url = data['url']
-        logging.info('Got ws url: %s', ws_url)
-        return ws_url
-
-    def send_message(self, text, channel_id=None, channel_name=None):
-        if channel_id is None and channel_name is None:
-            raise TypeError('Either channel_id or channel_name should be passed')
-
-        if channel_name:
-            channel_id = self._get_channel_id(channel_name)
-
-        return self.client.send_message(channel_id, text)
 
     def _get_channel_id(self, name):
         for c in self.channels.itervalues():
@@ -120,20 +100,37 @@ class SlackBot(object):
     @gen.coroutine
     def get_conn(self):
         if self.conn_pool[0] is None:
-            ws_url = self.get_ws_url()
             # Assume this operation always success
-            conn = yield websocket_connect(ws_url)
+            conn = yield websocket_connect(self.ws_url)
             self.conn_pool[0] = conn
 
         raise gen.Return(self.conn_pool[0])
+
+    def prepare(self):
+        # https://api.slack.com/methods/rtm.start
+        rv = self.client.api_call('rtm.start?simple_latest=1&no_unreads=1')
+
+        # TODO store users, channels here
+        self.ws_url = rv['url']
+        logging.info('Got ws url: %s', self.ws_url)
+
+        self.selfinfo = ObjectDict(rv['self'])
+        logging.info('Got selfinfo: %s', str(self.selfinfo)[:20])
+        self.users = SearchList(rv['users'], ['id', 'name'])
+        logging.info('Got users: %s', str(self.users)[:20])
+        self.channels = SearchList(rv['channels'], ['id', 'name'])
+        logging.info('Got channels: %s', str(self.channels)[:20])
+        self.groups = SearchList(rv['groups'], ['id', 'name'])
+        logging.info('Got groups: %s', str(self.groups)[:20])
 
     @gen.coroutine
     def start(self):
         """Start receiving message and handling
         """
-        print 'Start recv from ws connection'
+        self.prepare()
         conn = yield self.get_conn()
 
+        logging.info('Start recv from ws connection')
         while True:
             msg = yield conn.read_message()
             logging.info('Get msg: %s', msg)

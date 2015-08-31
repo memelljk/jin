@@ -27,6 +27,29 @@ class ObjectDict(dict):
         return '<ObjectDict %s >' % dict(self)
 
 
+class SearchList(list):
+    def __init__(self, raw_list, indexes=None):
+        list.__init__(self, raw_list)
+        index_maps = {}
+        if indexes:
+            for i in indexes:
+                _map = {item[i]: item for item in self}
+                index_maps[i] = _map
+
+        self.indexes = indexes
+        self.index_maps = index_maps
+
+    def get(self, **kwargs):
+        k = kwargs.keys()[0]
+        v = kwargs.values()[0]
+
+        for i in self:
+            if i[k] == v:
+                return i
+
+        return None
+
+
 def decorator_factory(before_wrapper=None, before_func=None):
     """Return a decorator which triggers callback in each phase"""
     def decorator(func):
