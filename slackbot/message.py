@@ -43,6 +43,10 @@ class Message(object):
 
         return Reply(channel_id, text, **kwargs)
 
+    # TODO
+    def reply_to_user(self):
+        pass
+
     def __str__(self):
         return '<Message: {}>'.format(self.raw)
 
