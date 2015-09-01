@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from slackbot import SlackBot
-from slackbot.web import SlackHandler
+from jin import SlackBot
+from jin.web import SlackHandler
 import mybot_config
 
 

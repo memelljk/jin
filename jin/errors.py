@@ -2,13 +2,13 @@
 # coding: utf-8
 
 
-class SlackbotBaseError(Exception):
+class JinBaseError(Exception):
     pass
 
 
-class APICallFailed(SlackbotBaseError):
+class APICallFailed(JinBaseError):
     """Failed to call Slack API"""
 
 
-class ReplyFailed(SlackbotBaseError):
+class ReplyFailed(JinBaseError):
     """Failed to generate/send a reply"""

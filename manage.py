@@ -14,17 +14,7 @@ def cli():
 
 
 @cli.command()
-def run():
-    """Run slackbot service
-    """
-    from slackbot import app
-
-    app.main()
-
-
-@cli.command()
 def show_channels():
-
     print ', '.join(i['name'] for i in bot.channels.itervalues())
 
 

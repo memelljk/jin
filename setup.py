@@ -21,15 +21,15 @@ def get_long_description():
 
 setup(
     # license='License :: OSI Approved :: MIT License',
-    name='slackbot',
+    name='jin',
     version=version,
     author='reorx',
     author_email='novoreorx@gmail.com',
     description='A framework to write interactive bot for Slack',
-    url='https://github.com/reorx/slackbot',
+    url='https://github.com/reorx/jin',
     long_description=get_long_description(),
     packages=[
-        'slackbot',
+        'jin',
     ],
     # Or use (make sure find_packages is imported from setuptools):
     # packages=find_packages()
