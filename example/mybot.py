@@ -16,7 +16,9 @@ def hello(msg):
 
 @bot.on_event('message')
 def repeat(msg):
-    return msg.reply('You just said: %s' % msg.raw['text'])
+    # Only respond in #slack-test
+    if msg.channel == 'slack-test':
+        return msg.reply('You just said: %s' % msg.raw['text'])
 
 
 @bot.route('/send')

@@ -64,3 +64,21 @@ def decorator_factory(before_wrapper=None, before_func=None):
             return func(*args, **kwargs)
         return wrapper
     return decorator
+
+
+_UTF8_TYPES = (bytes, type(None))
+
+
+def utf8(value):
+    """Converts a string argument to a byte string.
+
+    If the argument is already a byte string or None, it is returned unchanged.
+    Otherwise it must be a unicode string and is encoded as utf8.
+    """
+    if isinstance(value, _UTF8_TYPES):
+        return value
+    if not isinstance(value, unicode):
+        raise TypeError(
+            "Expected bytes, unicode, or None; got %r" % type(value)
+        )
+    return value.encode("utf-8")

@@ -8,6 +8,7 @@ import logging
 import traceback
 from slackclient import SlackClient
 from .errors import APICallFailed
+from .utils import utf8
 
 
 class APIClient(object):
@@ -41,7 +42,11 @@ class APIClient(object):
         Reference: https://api.slack.com/methods/chat.postMessage
         """
 
-        api_args = dict(channel=channel_id, text=text)
+        api_args = dict(
+            channel=channel_id,
+            # Ensure text is utf8
+            text=utf8(text)
+        )
         if as_user:
             api_args['as_user'] = 'true'
         api_args.update(kwargs)

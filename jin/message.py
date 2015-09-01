@@ -19,14 +19,23 @@ class Message(object):
     def type(self):
         return self.raw.get('type')
 
-    def get_channel_id(self):
+    @property
+    def channel_id(self):
         return self.raw.get('channel')
+
+    @property
+    def channel(self):
+        if self.channel_id:
+            c = self.bot.channels.get(id=self.channel_id)
+            if c:
+                return c['name']
+        return None
 
     def reply(self, text, channel=None, channel_id=None, **kwargs):
 
         # Using message's channel
         if not channel and not channel_id:
-            channel_id = self.get_channel_id()
+            channel_id = self.channel_id
             if not channel_id:
                 raise errors.ReplyFailed(
                     'Neither a channel is specified, nor the message has a channel: %s', self.raw)
