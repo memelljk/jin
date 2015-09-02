@@ -14,7 +14,7 @@ def hello(msg):
     return msg.reply("I'm online!", channel='slack-test')
 
 
-@bot.on_event('message')
+@bot.on_event(('message', None))
 def repeat(msg):
     # Only respond in #slack-test
     if msg.channel == 'slack-test':

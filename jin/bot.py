@@ -87,6 +87,9 @@ class SlackBot(object):
         return decorator_factory(before_wrapper=before_wrapper)
 
     def on_event(self, event_type, match_key=None, match_pattern=None, break_loop=False):
+        """
+        ``event_type`` could be a string or tuple
+        """
         def before_wrapper(func):
             options = dict(
                 match_key=match_key,
@@ -168,16 +171,21 @@ class SlackBot(object):
 
         for event_type, handler_func, options in self._message_handlers:
             msg_type = msg.type
+            msg_subtype = msg.subtype
             #logging.debug('msg type %s %s', msg_type, event_type)
-            if msg_type == event_type:
-                logging.info('Event type %s, call handler %s', event_type, handler_func)
+
+            if match_event_type((msg_type, msg_subtype), event_type):
+                logging.info('Match event_type %s, call handler %s', event_type, handler_func)
                 # TODO more options
                 #match_key=match_key,
                 #match_pattern=match_pattern,
                 #break_loop=break_loop,
 
                 output = handler_func(msg)
-                self.handle_output(output, msg)
+                if output is None:
+                    logging.debug('output is None, skip')
+                else:
+                    self.handle_output(output, msg)
 
                 if options.get('break_loop'):
                     logging.info('Break message handling loop')
@@ -212,3 +220,10 @@ class SlackBot(object):
         })
 
         run_server(self.start, application, self.config.PORT)
+
+
+def match_event_type(types, event_type):
+    if isinstance(event_type, basestring):
+        return types[0] == event_type
+    else:  # tuple
+        return types == event_type

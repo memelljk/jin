@@ -20,6 +20,10 @@ class Message(object):
         return self.raw.get('type')
 
     @property
+    def subtype(self):
+        return self.raw.get('subtype')
+
+    @property
     def channel_id(self):
         return self.raw.get('channel')
 
