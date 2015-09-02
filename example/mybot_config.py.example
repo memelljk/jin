@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+SLACK_TOKEN = ''
+
+PORT = 9000
+
+DEBUG = True
