@@ -8,6 +8,7 @@ import traceback
 from tornado import gen
 from tornado.websocket import websocket_connect
 from tornado.log import enable_pretty_logging
+from tornado.ioloop import PeriodicCallback
 
 from .core import APIClient
 from .web import make_application
@@ -39,6 +40,9 @@ class SlackBot(object):
 
         # For `prepare`
         self.ws_url = None
+
+        self.register_default_events()
+        self.register_periodic_callback()
 
     def apply_config_object(self, config_object):
         config = ObjectDict(self.default_config)
@@ -106,11 +110,34 @@ class SlackBot(object):
         #compiled = re.compile(text_regex)
         pass
 
-    def _get_channel_id(self, name):
-        for c in self.channels.itervalues():
-            if c['name'] == name:
-                return c['id']
-        raise ValueError('No channel named %s' % name)
+    def register_default_events(self):
+        """Register some default event handlers to grant the bot basic
+        functionality & intelligence, e.g. update channels upon
+        channel_created & other events.
+        """
+        pass
+
+    def register_periodic_callback(self, second=60):
+        PeriodicCallback(
+            self._check_connection, second * 1000).start()
+
+    def _check_connection(self):
+        conn = self.conn_pool[0]
+        if conn:
+            if conn.protocol:
+                conn.protocol.write_ping(b'a')
+                logging.debug('Ping: a')
+            return
+
+            logging.debug(
+                'Connection: .protocol.*_terminated %s %s; .stream.close() %s; .tcp_client.resolver.executor %s',
+                conn.protocol.client_terminated,
+                conn.protocol.server_terminated,
+                conn.stream.closed(),
+                conn.tcp_client.resolver.executor,
+            )
+        else:
+            logging.warn('No connection in conn_pool')
 
     @gen.coroutine
     def get_conn(self):
@@ -119,7 +146,20 @@ class SlackBot(object):
             conn = yield websocket_connect(self.ws_url)
             self.conn_pool[0] = conn
 
+            print 'conn', conn, dir(conn)
+            print conn.__dict__
+
         raise gen.Return(self.conn_pool[0])
+
+    def recycle_conn(self):
+        """Close current connection and clear conn_pool
+        """
+        logging.info('Recycle old connection %s', self.conn_pool)
+        conn = self.conn_pool[0]
+        if conn is not None:
+            conn.close()
+
+        self.conn_pool[0] = None
 
     def prepare(self):
         # https://api.slack.com/methods/rtm.start
@@ -140,14 +180,37 @@ class SlackBot(object):
 
     @gen.coroutine
     def start(self):
-        """Start receiving message and handling
+        """Start the bot service, keep underlying `_start` in a while True loop
+        """
+        while True:
+            try:
+                yield self._start()
+            except errors.WSConnectionClosed as e:
+                logging.warn('Connection was closed: %s', e)
+                self.recycle_conn()
+
+    @gen.coroutine
+    def _start(self):
+        """Establish websocket connection and start receiving and handling messages
         """
         self.prepare()
         conn = yield self.get_conn()
 
         logging.info('Start recv from ws connection')
         while True:
+            logging.debug('!Read message')
+
             msg_str = yield conn.read_message()
+
+            logging.debug('!Got message, %s', msg_str)
+
+            # Since when connection is closed, `read_message` got `None`,
+            # there's no need to override `WebSocketClientConnection.on_close`,
+            # just do reconnect if `msg_str` is `None`.
+            if msg_str is None:
+                raise errors.WSConnectionClosed(
+                    'Got None from read_message, means connection is closed')
+
             try:
                 msg = Message(json.loads(msg_str), self)
             except Exception as e:

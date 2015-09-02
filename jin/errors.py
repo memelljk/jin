@@ -12,3 +12,7 @@ class APICallFailed(JinBaseError):
 
 class ReplyFailed(JinBaseError):
     """Failed to generate/send a reply"""
+
+
+class WSConnectionClosed(JinBaseError):
+    """Websocket connection closed"""
