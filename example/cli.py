@@ -2,7 +2,6 @@
 # coding: utf-8
 
 import click
-from mybot import bot
 
 
 @click.group(context_settings={
@@ -13,16 +12,24 @@ def cli():
     pass
 
 
+def _get_bot():
+    from mybot import bot
+    bot.prepare()
+    return bot
+
+
 @cli.command()
 def show_channels():
-    print ', '.join(i['name'] for i in bot.channels.itervalues())
+    bot = _get_bot()
+    print ', '.join('{name} ({id})'.format(**i) for i in bot.channels)
 
 
 @cli.command()
 @click.argument('channel')
 @click.argument('text')
 def send_message(channel, text):
-    bot.send_message(text, channel_name=channel)
+    bot = _get_bot()
+    bot.send_message(text, channel=channel)
 
 if __name__ == '__main__':
     cli()

@@ -64,6 +64,27 @@ class Message(object):
         return '<Message: {}>'.format(self.raw)
 
 
+def make_reply(bot, text, channel=None, channel_id=None, **kwargs):
+        # Using message's channel
+        if not channel and not channel_id:
+            channel_id = self.channel_id
+            if not channel_id:
+                raise errors.ReplyFailed(
+                    'Neither a channel is specified, nor the message has a channel: %s', self.raw)
+        else:
+            if not channel_id and channel:
+                channel_item = self.bot.channels.get(name=channel)
+                if not channel_item:
+                    raise errors.ReplyFailed('Channel %s not found', channel)
+                channel_id = channel_item['id']
+
+        # Ensure channel_id is not None
+        if not channel_id:
+            raise errors.ReplyFailed('WTF! %s, %s' % (channel, channel_id))
+
+        return Reply(channel_id, text, **kwargs)
+
+
 class Reply(object):
     """Reply is what reply to slack by the robot"""
 

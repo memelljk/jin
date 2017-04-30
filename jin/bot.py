@@ -115,7 +115,9 @@ class SlackBot(object):
         functionality & intelligence, e.g. update channels upon
         channel_created & other events.
         """
-        pass
+        # TODO add some default events to:
+        # 1. Keep channels, groups, users up to date
+        # 2. Default reply for direct message if not implement
 
     def register_periodic_callback(self, second=60):
         PeriodicCallback(
@@ -202,7 +204,7 @@ class SlackBot(object):
 
             msg_str = yield conn.read_message()
 
-            logging.debug('!Got message, %s', msg_str)
+            logging.debug('!Got msg str, %s', msg_str)
 
             # Since when connection is closed, `read_message` got `None`,
             # there's no need to override `WebSocketClientConnection.on_close`,
@@ -273,6 +275,9 @@ class SlackBot(object):
     def send_reply(self, reply):
         logging.info('Send reply: %s', reply)
         return self.client.send_message(reply.channel_id, reply.text, **reply.extra_args)
+
+    def send_message(self, *args, **kwargs):
+        """Simple """
 
     def run(self):
         """Run bot as a http server
